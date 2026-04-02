@@ -1,0 +1,44 @@
+[
+  {
+    "route_id": "landing",
+    "path": "/",
+    "route_kind": "Landing",
+    "parent_route_id": null,
+    "static_fallback": true
+  },
+  {
+    "route_id": "runtime-map",
+    "path": "/runtime",
+    "route_kind": "RuntimeMap",
+    "parent_route_id": "landing",
+    "static_fallback": true
+  },
+  {
+    "route_id": "docs-entry",
+    "path": "/docs-entry",
+    "route_kind": "DocsEntry",
+    "parent_route_id": "landing",
+    "static_fallback": true
+  },
+  {
+    "route_id": "release-flow",
+    "path": "/release-flow",
+    "route_kind": "ReleaseFlow",
+    "parent_route_id": "landing",
+    "static_fallback": true
+  },
+  {
+    "route_id": "style-lab",
+    "path": "/style-lab",
+    "route_kind": "StyleLab",
+    "parent_route_id": "landing",
+    "static_fallback": true
+  },
+  {
+    "route_id": "detail",
+    "path": "/detail/:topic",
+    "route_kind": "StoryDetail",
+    "parent_route_id": null,
+    "static_fallback": true
+  }
+]

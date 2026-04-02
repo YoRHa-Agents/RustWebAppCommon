@@ -1,0 +1,9 @@
+{
+  "web_runtime_id": "static_site_http_shell",
+  "web_entry_route": "/runtime",
+  "desktop_adapter_id": "desktop_tauri_adapter",
+  "desktop_preview_mode": "browser_backed_preview",
+  "desktop_preview_route": "/detail/desktop-preview",
+  "docs_index_path": "/docs/index.html",
+  "pages_strategy": "generated_site_tree"
+}

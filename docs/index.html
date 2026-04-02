@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RustWebAppCommon Docs Entry</title>
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+  <body class="docs-body">
+    <div class="shell">
+      <header class="masthead">
+        <p class="eyebrow">Docs / Index</p>
+        <h1>Docs And Agent Entry Front Door</h1>
+        <p class="lede">
+          一个短而明确的前门：先说明从哪开始读，再按 Human / Main Agent / Subagent 分流到
+          同一套 architecture、guides 与 demo 词汇体系。
+        </p>
+      </header>
+
+      <main class="content">
+        <section class="status-strip" id="docs-status"></section>
+        <section class="panel">
+          <h2>Start Here</h2>
+          <p>
+            `README.md`、`AGENTS.md` 与 `docs/index.md` 共同构成阅读入口；静态 docs page 读取
+            `docs-index.json`，并保持与本地 markdown 导航同一套术语。
+          </p>
+          <div class="button-row">
+            <a class="button-link" id="landing-link" href="../index.html">Open Landing</a>
+            <a class="button-link" id="runtime-link" href="../demo.html">Open Runtime Surface</a>
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Choose Your Path</h2>
+          <div id="docs-groups" class="docs-group-grid"></div>
+        </section>
+        <section class="panel">
+          <h2>Full Docs Index</h2>
+          <div id="docs-index-output" class="docs-list"></div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function normalizeBasePath(pathname) {
+        if (pathname.endsWith("/docs/index.html")) {
+          return pathname.slice(0, -"/docs/index.html".length);
+        }
+        return pathname.endsWith("/") ? pathname.slice(0, -1) : pathname;
+      }
+
+      function withBase(basePath, path) {
+        const normalized = path.startsWith("/") ? path : `/${path}`;
+        return `${basePath}${normalized}` || normalized;
+      }
+
+      function audienceLabel(audience) {
+        return {
+          Human: "Human",
+          MainAgent: "Main Agent",
+          Subagent: "Subagent",
+        }[audience] || audience;
+      }
+
+      function groupByAudience(docs) {
+        const groups = {
+          Human: [],
+          MainAgent: [],
+          Subagent: [],
+        };
+
+        for (const doc of docs) {
+          if (!groups[doc.audience]) {
+            groups[doc.audience] = [];
+          }
+          groups[doc.audience].push(doc);
+        }
+
+        return groups;
+      }
+
+      async function loadDocsIndex() {
+        const basePath = normalizeBasePath(window.location.pathname);
+        const indexContainer = document.getElementById("docs-index-output");
+        const groupsContainer = document.getElementById("docs-groups");
+        const statusContainer = document.getElementById("docs-status");
+
+        document.getElementById("landing-link").href = withBase(basePath, "/");
+        document.getElementById("runtime-link").href = withBase(basePath, "/runtime");
+
+        try {
+          const [docs, runtime] = await Promise.all([
+            fetch(withBase(basePath, "/docs/docs-index.json")).then((response) => {
+              if (!response.ok) {
+                throw new Error("docs-index.json missing");
+              }
+              return response.json();
+            }),
+            fetch(withBase(basePath, "/assets/runtime-contract.json")).then((response) => {
+              if (!response.ok) {
+                throw new Error("runtime-contract.json missing");
+              }
+              return response.json();
+            }),
+          ]);
+
+          const groups = groupByAudience(docs);
+          statusContainer.innerHTML = `
+            <article class="status-card">
+              <span class="status-label">Docs nodes</span>
+              <span class="status-value">${docs.length}</span>
+            </article>
+            <article class="status-card">
+              <span class="status-label">Docs path</span>
+              <span class="status-value">${escapeHtml(runtime.docs_index_path)}</span>
+            </article>
+            <article class="status-card">
+              <span class="status-label">Web runtime</span>
+              <span class="status-value">${escapeHtml(runtime.web_runtime_id)}</span>
+            </article>
+          `;
+
+          groupsContainer.innerHTML = Object.entries(groups)
+            .map(
+              ([audience, nodes]) => `
+                <article class="docs-group">
+                  <h3>${escapeHtml(audienceLabel(audience))}</h3>
+                  <p>从这一入口开始阅读最相关的页面，再进入 architecture、guides 或 demo。</p>
+                  <ul class="docs-node-list">
+                    ${nodes
+                      .map(
+                        (node) => `
+                          <li>
+                            <strong>${escapeHtml(node.title)}</strong>
+                            <code>${escapeHtml(node.path)}</code>
+                          </li>
+                        `,
+                      )
+                      .join("")}
+                  </ul>
+                </article>
+              `,
+            )
+            .join("");
+
+          indexContainer.innerHTML = docs
+            .map(
+              (node) => `
+                <article class="doc-card">
+                  <h3>${escapeHtml(node.title)}</h3>
+                  <p>${escapeHtml(node.kind)} / ${escapeHtml(audienceLabel(node.audience))}</p>
+                  <code>${escapeHtml(node.path)}</code>
+                </article>
+              `,
+            )
+            .join("");
+        } catch (error) {
+          statusContainer.innerHTML = "";
+          groupsContainer.innerHTML = "";
+          indexContainer.innerHTML = `<p>${escapeHtml(error.message)}</p>`;
+        }
+      }
+
+      loadDocsIndex();
+    </script>
+  </body>
+</html>
