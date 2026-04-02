@@ -1,5 +1,13 @@
+mod remote_review;
+
 use common_core::{
     DevLaunchRequest, DocsNode, ReleaseDescriptor, RouteDescriptor, SurfaceKind, ThemeTokenSet,
+};
+pub use remote_review::{
+    default_remote_review_paths, RemoteDirectoryStatus, RemoteDirectoryStatusKind,
+    RemoteDocReviewAdapter, RemoteReviewError, RemoteReviewFileKind, RemoteReviewMode,
+    RemoteReviewPlanRequest, RemoteReviewReport, RemoteReviewRequest, SshHostCatalog,
+    SshHostCatalogIssue, SshHostEntry, StubRemoteDocsReviewAdapter,
 };
 use serde::Serialize;
 use serde_json::to_vec_pretty;
@@ -23,6 +31,7 @@ pub enum AdapterPlanKind {
     DocsBuild,
     DesktopLaunch,
     ReleaseBuild,
+    RemoteReview,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -56,11 +65,7 @@ pub trait WebDemoAdapter {
         routes: &[RouteDescriptor],
     ) -> AdapterPlan;
 
-    fn plan_demo_build(
-        &self,
-        routes: &[RouteDescriptor],
-        theme: &ThemeTokenSet,
-    ) -> AdapterPlan;
+    fn plan_demo_build(&self, routes: &[RouteDescriptor], theme: &ThemeTokenSet) -> AdapterPlan;
 
     fn build_demo_site(
         &self,
@@ -87,7 +92,11 @@ pub trait DesktopTauriAdapter {
     fn plan_desktop_launch(&self, request: &DevLaunchRequest) -> AdapterPlan;
     fn plan_desktop_bundle(&self, release: &ReleaseDescriptor) -> AdapterPlan;
 
-    fn launch_desktop_preview(&self, site_root: &Path, request: &DevLaunchRequest) -> io::Result<()>;
+    fn launch_desktop_preview(
+        &self,
+        site_root: &Path,
+        request: &DevLaunchRequest,
+    ) -> io::Result<()>;
 }
 
 pub trait ReleasePipelineAdapter {
@@ -116,11 +125,7 @@ impl WebDemoAdapter for StubWebDemoAdapter {
         }
     }
 
-    fn plan_demo_build(
-        &self,
-        routes: &[RouteDescriptor],
-        theme: &ThemeTokenSet,
-    ) -> AdapterPlan {
+    fn plan_demo_build(&self, routes: &[RouteDescriptor], theme: &ThemeTokenSet) -> AdapterPlan {
         AdapterPlan {
             adapter_id: "web_demo_adapter",
             plan_kind: AdapterPlanKind::DemoBuild,
@@ -291,7 +296,11 @@ impl DesktopTauriAdapter for StubDesktopTauriAdapter {
         }
     }
 
-    fn launch_desktop_preview(&self, site_root: &Path, request: &DevLaunchRequest) -> io::Result<()> {
+    fn launch_desktop_preview(
+        &self,
+        site_root: &Path,
+        request: &DevLaunchRequest,
+    ) -> io::Result<()> {
         let host = request.host.as_deref().unwrap_or("127.0.0.1").to_string();
         let port = request.port.unwrap_or(9080);
         let route_entry = request
@@ -338,6 +347,7 @@ pub struct AdapterRegistry {
     pub docs_site: StubDocsSiteAdapter,
     pub desktop_tauri: StubDesktopTauriAdapter,
     pub release_pipeline: StubReleasePipelineAdapter,
+    pub remote_docs_review: StubRemoteDocsReviewAdapter,
 }
 
 fn handle_http_request(mut stream: TcpStream, site_root: &Path) -> io::Result<()> {
@@ -349,10 +359,7 @@ fn handle_http_request(mut stream: TcpStream, site_root: &Path) -> io::Result<()
 
     let request = String::from_utf8_lossy(&buffer[..size]);
     let request_line = request.lines().next().unwrap_or_default();
-    let path = request_line
-        .split_whitespace()
-        .nth(1)
-        .unwrap_or("/");
+    let path = request_line.split_whitespace().nth(1).unwrap_or("/");
 
     let (target, content_type) = resolve_asset_path(site_root, path);
     let body = fs::read(&target)?;
@@ -368,7 +375,11 @@ fn handle_http_request(mut stream: TcpStream, site_root: &Path) -> io::Result<()
 }
 
 fn resolve_asset_path(site_root: &Path, request_path: &str) -> (PathBuf, &'static str) {
-    let clean_path = request_path.split('?').next().unwrap_or("/").trim_start_matches('/');
+    let clean_path = request_path
+        .split('?')
+        .next()
+        .unwrap_or("/")
+        .trim_start_matches('/');
 
     let candidate = if clean_path.is_empty() {
         site_root.join("index.html")
@@ -398,10 +409,7 @@ fn resolve_asset_path(site_root: &Path, request_path: &str) -> (PathBuf, &'stati
 }
 
 fn desktop_preview_url(host: &str, port: u16, route_entry: &str) -> String {
-    format!(
-        "http://{host}:{port}{}",
-        normalize_route_entry(route_entry)
-    )
+    format!("http://{host}:{port}{}", normalize_route_entry(route_entry))
 }
 
 fn normalize_route_entry(route_entry: &str) -> String {
@@ -436,9 +444,8 @@ mod tests {
 
     use super::{
         desktop_preview_url, normalize_route_entry, resolve_asset_path, DesktopTauriAdapter,
-        DocsSiteAdapter, ReleasePipelineAdapter,
-        StubDesktopTauriAdapter, StubDocsSiteAdapter, StubReleasePipelineAdapter,
-        StubWebDemoAdapter, WebDemoAdapter,
+        DocsSiteAdapter, ReleasePipelineAdapter, StubDesktopTauriAdapter, StubDocsSiteAdapter,
+        StubReleasePipelineAdapter, StubWebDemoAdapter, WebDemoAdapter,
     };
 
     fn temp_site_root() -> PathBuf {
@@ -478,7 +485,11 @@ mod tests {
         let site_root = temp_site_root();
 
         let result = adapter
-            .build_demo_site(&site_root, &starter_demo_routes(), &ThemeTokenSet::nier_gray())
+            .build_demo_site(
+                &site_root,
+                &starter_demo_routes(),
+                &ThemeTokenSet::nier_gray(),
+            )
             .expect("demo site should build");
 
         assert_eq!(result.generated_files.len(), 4);
@@ -495,7 +506,11 @@ mod tests {
         fs::write(site_root.join("404.html"), "<html>fallback</html>").expect("404 should exist");
 
         adapter
-            .build_demo_site(&site_root, &starter_demo_routes(), &ThemeTokenSet::nier_gray())
+            .build_demo_site(
+                &site_root,
+                &starter_demo_routes(),
+                &ThemeTokenSet::nier_gray(),
+            )
             .expect("demo site should build");
 
         let html = fs::read_to_string(site_root.join("404.html")).expect("404 should be readable");
@@ -516,7 +531,11 @@ mod tests {
         let adapter = StubDocsSiteAdapter;
         let site_root = temp_site_root();
         let result = adapter
-            .build_docs_site(&site_root, &starter_docs_nodes(), &ThemeTokenSet::nier_gray())
+            .build_docs_site(
+                &site_root,
+                &starter_docs_nodes(),
+                &ThemeTokenSet::nier_gray(),
+            )
             .expect("docs site should build");
 
         assert_eq!(result.generated_files.len(), 2);
@@ -571,4 +590,3 @@ mod tests {
         assert_eq!(normalize_route_entry("/runtime"), "/runtime");
     }
 }
-

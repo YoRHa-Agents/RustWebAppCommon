@@ -1,5 +1,5 @@
 # RustWebAppCommon adapter 边界与运行面矩阵
-> 更新时间: 2026-04-01
+> 更新时间: 2026-04-02 09:50 UTC
 
 ## 目标
 本文件定义 `common_adapters` 的最小集合、各 adapter 的输入/输出、依赖关系和替换条件。它的核心任务是把 runtime/host/tooling 的差异留在 adapter 层，不让这些差异泄漏到 `common_core`。
@@ -11,6 +11,7 @@
 | `docs_site_adapter` | docs/index 站点组织、文档入口映射、静态 docs 产物 | `DocsNode`、`ThemeTokenSet`、`WorkspaceIdentity` | 业务 API、release、desktop 行为 | 高 |
 | `desktop_tauri_adapter` | 桌面壳层、窗口启动、桌面 build/bundle/updater 接口 | `WorkspaceIdentity`、`DevLaunchRequest`、`ReleaseDescriptor` | 文档站组织、GitHub Pages、业务页面逻辑 | 中 |
 | `release_pipeline_adapter` | release metadata、artifact 目标、签名与发布流水线映射 | `ReleaseDescriptor`、`WorkspaceIdentity` | 页面渲染、docs/index、业务运行时 | 中 |
+| `remote_docs_review_adapter` | 本机 SSH 配置读取、host alias 归一化与只读远程 doc/design 审阅 | 无；SSH 输入与远程路径规则停留在 adapter-local | session/auth、remote write/sync/deploy、产品级 review workflow | 中 |
 
 ## 运行面矩阵
 | 场景 | 主 adapter | 次 adapter | 输出 |
@@ -21,6 +22,7 @@
 | GitHub Pages 发布 | `docs_site_adapter` | `release_pipeline_adapter`（仅部署动作） | `/docs` 或 artifact |
 | 本地 desktop 运行 | `desktop_tauri_adapter` | `web_demo_adapter`（若需要前端 dev server） | 桌面壳层 |
 | desktop release | `desktop_tauri_adapter` | `release_pipeline_adapter` | 安装包、签名产物、release metadata |
+| 只读 remote doc/design 审阅 | `remote_docs_review_adapter` | — | SSH host catalog、readonly review summary |
 
 ## adapter 详细定义
 ### 1. `web_demo_adapter`
@@ -130,6 +132,34 @@
 - 把 CI 平台语义直接写进 core
 - 把静态 docs 发布与 desktop release 混成一条不可替换路径
 
+### 5. `remote_docs_review_adapter`
+**存在原因**
+- 负责把本机 `~/.ssh/config`、SSH host alias 与只读远程目录发现收敛为共享审阅接缝。
+
+**输入**
+- adapter-local SSH config 路径（默认 `~/.ssh/config`）
+- host alias
+- 约定目录或显式传入的远程路径
+
+**输出**
+- 归一化后的 SSH host catalog
+- remote `doc/`、`docs/`、`design/`、`designs/` 目录状态
+- Markdown、HTML、图片等文件的只读审阅摘要
+
+**不负责**
+- session/auth 生命周期
+- remote write、sync、deploy 与 conflict handling
+- 产品级 review workflow 或业务词汇
+
+**候选实现**
+- adapter-local SSH config parser + `ssh` 子进程
+- fixture-backed transport，用于无网络 smoke 验证
+
+**Failure Modes**
+- 把 SSH provider、session 或 remote path state 抬升进 `common_core`
+- 把单一产品目录结构硬编码成唯一合法远程路径
+- 让 CLI/demo 使用产品专有 review 命名，破坏共享词汇
+
 ## adapter 选择规则
 - 如果能力只是“所有应用都要用到的名字和结构”，它属于 `common_core`。
 - 如果能力需要依赖具体 host/runtime/tooling，它属于 adapter。
@@ -148,6 +178,7 @@
 | `docs_site_adapter` | `low-medium` | 信息架构稳定后，实现可替换成本较低 |
 | `desktop_tauri_adapter` | `high` | updater、bundle、签名路径较重 |
 | `release_pipeline_adapter` | `medium-high` | 与产物命名、签名和 CI 权限高度相关 |
+| `remote_docs_review_adapter` | `medium` | 依赖 SSH config 方言、远程 shell 行为与下游边界裁决，但不进入 core |
 
 ## 设计结论
 adapter 层的目标不是隐藏差异，而是隔离差异。只有当每个 adapter 的边界和失败模式都清楚时，`RustWebAppCommon` 才能既统一多个仓库，又不把未来演进空间锁死。

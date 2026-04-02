@@ -33,8 +33,9 @@ run_post_install_hook() {
 }
 
 main() {
-  local asset_name temp_dir source_asset checksum_file manifest_path install_mode
+  local asset_name temp_dir source_asset checksum_file manifest_path install_mode platform_manifest
   asset_name="$(rwc_detect_asset_name)"
+  platform_manifest="$(rwc_manifest_name_for_target "$(rwc_target_platform)")"
   temp_dir="$(mktemp -d)"
   trap "rm -rf '$temp_dir'" EXIT
 
@@ -44,7 +45,10 @@ main() {
     install_mode="local-release-dir"
     source_asset="$LOCAL_RELEASE_DIR/$asset_name"
     checksum_file="$LOCAL_RELEASE_DIR/SHA256SUMS"
-    manifest_path="$LOCAL_RELEASE_DIR/release-manifest.json"
+    manifest_path="$LOCAL_RELEASE_DIR/$platform_manifest"
+    if [[ ! -f "$manifest_path" ]]; then
+      manifest_path="$LOCAL_RELEASE_DIR/release-manifest.json"
+    fi
     rwc_validate_local_release_dir "$LOCAL_RELEASE_DIR" "$asset_name"
     cp "$source_asset" "$INSTALL_DIR/$BINARY_NAME"
   elif command -v gh >/dev/null 2>&1; then
@@ -54,6 +58,7 @@ main() {
         --repo "$(rwc_release_repo)" \
         --pattern "$asset_name" \
         --pattern "SHA256SUMS" \
+        --pattern "$platform_manifest" \
         --pattern "release-manifest.json" \
         --dir "$temp_dir" \
         --clobber
@@ -62,16 +67,20 @@ main() {
         --repo "$(rwc_release_repo)" \
         --pattern "$asset_name" \
         --pattern "SHA256SUMS" \
+        --pattern "$platform_manifest" \
         --pattern "release-manifest.json" \
         --dir "$temp_dir" \
         --clobber
     fi
     rwc_verify_checksum "$temp_dir/$asset_name" "$temp_dir/SHA256SUMS"
-    manifest_path="$temp_dir/release-manifest.json"
+    manifest_path="$temp_dir/$platform_manifest"
+    if [[ ! -f "$manifest_path" ]]; then
+      manifest_path="$temp_dir/release-manifest.json"
+    fi
     if [[ -f "$manifest_path" ]]; then
       rwc_validate_release_manifest "$manifest_path" "$asset_name" "$(rwc_target_platform)"
     elif [[ "$RWC_INSTALL_REQUIRE_MANIFEST" == "1" ]]; then
-      echo "missing release-manifest.json in downloaded release" >&2
+      echo "missing release manifest in downloaded release" >&2
       return 1
     fi
     mv "$temp_dir/$asset_name" "$INSTALL_DIR/$BINARY_NAME"
@@ -79,11 +88,14 @@ main() {
     install_mode="direct-download"
     curl -fsSL "$(rwc_release_download_url "$asset_name")" -o "$temp_dir/$asset_name"
     curl -fsSL "$(rwc_release_download_url "SHA256SUMS")" -o "$temp_dir/SHA256SUMS"
-    manifest_path="$temp_dir/release-manifest.json"
-    if curl -fsSL "$(rwc_release_download_url "release-manifest.json")" -o "$manifest_path"; then
+    manifest_path="$temp_dir/$platform_manifest"
+    if curl -fsSL "$(rwc_release_download_url "$platform_manifest")" -o "$manifest_path"; then
+      rwc_validate_release_manifest "$manifest_path" "$asset_name" "$(rwc_target_platform)"
+    elif curl -fsSL "$(rwc_release_download_url "release-manifest.json")" -o "$temp_dir/release-manifest.json"; then
+      manifest_path="$temp_dir/release-manifest.json"
       rwc_validate_release_manifest "$manifest_path" "$asset_name" "$(rwc_target_platform)"
     elif [[ "$RWC_INSTALL_REQUIRE_MANIFEST" == "1" ]]; then
-      echo "missing release-manifest.json in downloaded release" >&2
+      echo "missing release manifest in downloaded release" >&2
       return 1
     else
       manifest_path=""

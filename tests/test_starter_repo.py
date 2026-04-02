@@ -19,6 +19,7 @@ class StarterRepoTests(unittest.TestCase):
             ROOT / "common" / "cli" / "src" / "lib.rs",
             ROOT / "common" / "cli" / "src" / "main.rs",
             ROOT / "docs" / "index.md",
+            ROOT / "docs" / "guides" / "review.md",
             ROOT / "demo" / "storyboard.md",
             ROOT / "examples" / "README.md",
             ROOT / "apps" / "README.md",
@@ -73,7 +74,9 @@ class StarterRepoTests(unittest.TestCase):
     def test_docs_demo_use_shared_terms(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         docs_index = (ROOT / "docs" / "index.md").read_text(encoding="utf-8")
+        review_guide = (ROOT / "docs" / "guides" / "review.md").read_text(encoding="utf-8")
         storyboard = (ROOT / "demo" / "storyboard.md").read_text(encoding="utf-8")
+        site_main = (ROOT / "site" / "js" / "main.js").read_text(encoding="utf-8")
         route_manifest = (ROOT / "site" / "assets" / "route-manifest.json").read_text(
             encoding="utf-8"
         )
@@ -83,9 +86,17 @@ class StarterRepoTests(unittest.TestCase):
 
         self.assertIn("common_core", readme)
         self.assertIn("browser-backed desktop preview", readme)
+        self.assertIn("cargo run -p common_cli -- review --list-hosts", readme)
         self.assertIn("runtime-decision", storyboard)
+        self.assertIn("remote-review", storyboard)
         self.assertIn("Choose Your Path", docs_index)
+        self.assertIn("readonly remote review", docs_index)
+        self.assertIn("docs/guides/review.md", docs_index)
         self.assertIn("docs/architecture/overview.md", docs_index)
+        self.assertIn("common_cli -- review --list-hosts", review_guide)
+        self.assertIn("readonly", review_guide)
+        self.assertIn("RWC_REMOTE_REVIEW_FIXTURE_ROOT", review_guide)
+        self.assertIn("Remote Review Seam", site_main)
         self.assertIn("RuntimeMap", route_manifest)
         self.assertIn("browser_backed_preview", runtime_contract)
 
@@ -106,15 +117,23 @@ class StarterRepoTests(unittest.TestCase):
         recommendations = (
             ROOT / "doc_auto" / "enva_migration_validation_recommendations.md"
         ).read_text(encoding="utf-8")
+        enva_gap = (ROOT / "doc_auto" / "enva_gap_requirements.md").read_text(
+            encoding="utf-8"
+        )
         index_content = (ROOT / "doc_auto" / "README.md").read_text(encoding="utf-8")
         self.assertIn("16_architecture_design_doc.md", content)
+        self.assertIn("readonly remote review seam", content)
         self.assertIn("Last Updated", content)
         self.assertIn("Gate 2: `Enva` 兼容性复核", gate_content)
         self.assertIn("Phase 1 -> (Phase 2 并行 Phase 3) -> Phase 4 -> Phase 5", delta)
         self.assertIn("same_capability", compatibility)
         self.assertIn("browser-backed preview", compatibility)
         self.assertIn("Enva", handoff)
+        self.assertIn("remote review seam", handoff)
         self.assertIn("RWC_POST_INSTALL_HOOK", recommendations)
+        self.assertIn("Readonly remote doc/design review seam", enva_gap)
+        self.assertIn("Common now owns an adapter-local readonly remote review seam", enva_gap)
+        self.assertIn("common review --list-hosts", enva_gap)
         self.assertIn("enva_migration_validation_recommendations.md", index_content)
 
     def test_release_and_pages_workflows_exist(self) -> None:
@@ -131,6 +150,9 @@ class StarterRepoTests(unittest.TestCase):
         self.assertIn("tests.test_enva_migration_validation", release)
         self.assertIn("scripts/validate-release.sh", release)
         self.assertIn("softprops/action-gh-release", release)
+        self.assertIn("linux-aarch64", release)
+        self.assertIn("macos-aarch64", release)
+        self.assertIn("release-manifest-", release)
 
     def test_gitignore_preserves_repo_sources_and_ignores_build_outputs(self) -> None:
         content = (ROOT / ".gitignore").read_text(encoding="utf-8")
@@ -155,8 +177,10 @@ class StarterRepoTests(unittest.TestCase):
         )
 
         self.assertIn("rwc_detect_asset_name", contract)
+        self.assertIn("rwc_manifest_name_for_target", contract)
         self.assertIn("rwc_validate_local_release_dir", contract)
         self.assertIn("release-manifest.json", build_script)
+        self.assertIn("release-manifest-", build_script)
         self.assertIn("rwc_validate_local_release_dir", build_script)
         self.assertIn("rwc_verify_checksum", install_script)
         self.assertIn("RWC_POST_INSTALL_HOOK", install_script)
@@ -165,6 +189,7 @@ class StarterRepoTests(unittest.TestCase):
         self.assertIn("compare_site_contracts", validate_script)
         self.assertIn("scripts/validate-release.sh", release_guide)
         self.assertIn("RWC_POST_INSTALL_HOOK", release_guide)
+        self.assertIn("release-manifest-<platform>.json", release_guide)
 
 
 if __name__ == "__main__":

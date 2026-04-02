@@ -101,6 +101,19 @@ class ResearchPackTests(unittest.TestCase):
         self.assertIn("app_owned", content)
         self.assertIn("13_common_core_contracts.md", content)
         self.assertIn("14_adapter_boundary_matrix.md", content)
+        self.assertIn("remote_docs_review_adapter", content)
+        self.assertIn("common review", content)
+
+    def test_remote_review_is_indexed_in_adapter_and_validation_docs(self) -> None:
+        matrix = (PACK_DIR / "14_adapter_boundary_matrix.md").read_text(encoding="utf-8")
+        checklist = (PACK_DIR / "17_pre_implementation_validation_checklist.md").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("remote_docs_review_adapter", matrix)
+        self.assertIn("只读 remote doc/design 审阅", matrix)
+        self.assertIn("common review", checklist)
+        self.assertIn("readonly remote review seam", checklist)
 
 
 if __name__ == "__main__":

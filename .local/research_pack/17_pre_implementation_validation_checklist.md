@@ -1,5 +1,5 @@
 # RustWebAppCommon 实现前验证清单
-> 更新时间: 2026-04-01
+> 更新时间: 2026-04-02 09:50 UTC
 
 ## 目标
 本清单用于明确：哪些内容在架构设计阶段已经足够确定，哪些内容在进入 starter repo 与实现阶段前必须再次验证。
@@ -18,6 +18,7 @@
 | 目录兼容 | `common/`、`docs/`、`demo/` 结构不与本地约束冲突 | `Enva` 差异说明 |
 | CLI 命名兼容 | 统一命令不会与现有脚本冲突 | 命名映射表 |
 | docs 入口兼容 | `README + AGENTS + docs/index` 能与本地文档体系共存 | 文档入口对照 |
+| readonly review 边界兼容 | `common review` 保持 generic readonly inspection，不吸收 session/vault/remote write 语义 | 边界裁决说明 |
 
 ## Gate 3: `doc_auto` 落点决策
 | 检查项 | 必须达到的条件 | 证据 |
@@ -47,6 +48,7 @@
   - docs/demo IA 设计
   - starter repo 基线实现
   - `doc_auto` 作为实现同步记录区引入
+  - readonly remote review seam 已在 adapter / CLI / docs / tests 中落地，并保持只读边界
 - **待验证**:
   - `Enva`
   - release path 落地
@@ -68,3 +70,5 @@
    - 已回答：实现阶段引入，作为 truth-source 同步记录区。
 5. `Enva` 是否要求调整 CLI 或 docs 入口命名？
    - 当前裁决：保持 `common dev/demo/docs/release` 与 `README + AGENTS + docs/index` 入口，不复制产品命名。
+6. readonly remote review 是否进入 `common_core`？
+   - 已回答：不会；它只停留在 adapter / CLI / docs / tests，并通过 `common review` 暴露 generic inspection flow。

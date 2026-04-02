@@ -268,6 +268,51 @@ function detailTopicContent(topic, manifests) {
         ),
       ],
     },
+    "remote-review": {
+      title: "Remote Review Seam",
+      summary:
+        "readonly remote review 只停留在 adapter / CLI：读取本机 `~/.ssh/config`、选择 SSH host alias，再发现远程 `doc/`、`docs/`、`design/`、`designs/` 并输出统一摘要。",
+      statuses: [
+        { label: "Config source", value: "~/.ssh/config or --config" },
+        { label: "Discovery mode", value: "auto or explicit --path" },
+        { label: "Review boundary", value: "readonly only" },
+      ],
+      summaryItems: [
+        "SSH provider、session、vault 和 remote path state 继续停留在 adapter 或 app-owned，不进入 `common_core`。",
+        "默认模式会自动发现 `doc/`、`docs/`、`design/`、`designs/`；显式路径模式则通过重复 `--path` 指定目标目录。",
+        "统一输出会标明 host alias、remote path 与文件类型，便于 docs/demo 与 CLI 使用同一套词汇。",
+      ],
+      commands: [
+        makeCommand(
+          "List SSH hosts",
+          "列出当前可解析的 SSH host alias。",
+          "cargo run -p common_cli -- review --list-hosts",
+        ),
+        makeCommand(
+          "Run readonly review",
+          "按 host alias 审阅远程 doc/design 目录。",
+          "cargo run -p common_cli -- review --ssh-host review-host --config /tmp/review-ssh --path /srv/reviews",
+        ),
+      ],
+      details: [
+        {
+          heading: "Adapter boundary",
+          body: "parser、host alias 归一化、远程目录发现与文件分类都留在 `common_adapters`；CLI 只负责参数协议与摘要输出。",
+        },
+        {
+          heading: "Supported files",
+          body: "当前统一识别 Markdown、HTML 与图片资源；其它文件保持只读忽略，而不是静默写回或猜测产品语义。",
+        },
+      ],
+      pathways: [
+        makePathway(
+          "Back to runtime map",
+          "回到 `common_core / common_adapters / app_owned` 的总览。",
+          "/runtime",
+          "Open Runtime Map",
+        ),
+      ],
+    },
   };
 
   return (
@@ -376,6 +421,12 @@ function routeContent(routePath, manifests) {
           "查看 build/install/update/workflow 如何共享同一契约。",
           "/detail/release-contract",
           "Open Release Contract",
+        ),
+        makePathway(
+          "Remote review seam",
+          "查看只读 SSH remote review 如何停留在 adapter / CLI。",
+          "/detail/remote-review",
+          "Open Remote Review Seam",
         ),
       ],
     },

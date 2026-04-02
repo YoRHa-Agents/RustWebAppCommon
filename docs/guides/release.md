@@ -25,7 +25,7 @@ LOCAL_RELEASE_DIR=release bash scripts/update-check.sh
 - `scripts/update-check.sh` 支持本地 release 校验与 GitHub Release 当前平台资产发现，并能报告 `release-manifest.json` / `SHA256SUMS` 是否齐备
 - `scripts/validate-release.sh` 会串联 build、release 目录校验、release-site parity、install hook 与 update-check，是推荐的 common 侧迁移验证入口
 - `.github/workflows/deploy-pages.yml` 会在 CI 中运行 Rust tests、Python trio（含 `tests.test_enva_migration_validation`）、重新生成 `site/` 后发布到 Pages
-- `.github/workflows/release-artifacts.yml` 会构建 release bundle、上传 workflow artifact，并在 tag push 时附加 GitHub Release assets
+- `.github/workflows/release-artifacts.yml` 现在会对 `linux-x86_64`、`linux-aarch64` 与 `macos-aarch64` 做真实矩阵构建，并在 tag push 时把多平台 binary、`SHA256SUMS`、聚合 `release-manifest.json` 与平台级 `release-manifest-<platform>.json` 一起发布到 GitHub Release
 
 ## 推荐验证入口
 ```bash
@@ -36,7 +36,8 @@ python -m unittest tests.test_research_pack tests.test_starter_repo tests.test_e
 ## 迁移验证接缝
 ### Shared contract
 - `RWC_TARGET_PLATFORM`：在 contract 校验或 matrix job 中指定目标平台，不把目标平台命名散落到 workflow
-- `release-manifest.json`：记录 `asset_name`、`platform`、`asset_prefix` 与通用 validation capabilities，不把产品语义写进 `common_core`
+- `release-manifest-<platform>.json`：平台级 manifest，供 install / update 入口优先校验当前目标平台的 asset
+- `release-manifest.json`：聚合 manifest，记录 release 中包含的多平台 asset 与对应平台 manifest 名称
 
 ### Install seam
 - `RWC_POST_INSTALL_HOOK`：安装完成后执行自定义 smoke command
@@ -46,7 +47,7 @@ python -m unittest tests.test_research_pack tests.test_starter_repo tests.test_e
 ### Update seam
 - `RWC_UPDATE_REQUIRE_MANIFEST=1`：要求远端 release 必须包含 `release-manifest.json`
 - `RWC_UPDATE_REQUIRE_CHECKSUMS=1`：要求远端 release 必须包含 `SHA256SUMS`
-- `scripts/update-check.sh` 只负责发现、校验与 readiness 报告，不在 common 中实现产品级 binary self-replace
+- `scripts/update-check.sh` 会优先识别 `release-manifest-<platform>.json`，找不到时再回退到聚合 `release-manifest.json`
 
 ### Downstream scaffold
 - Rust CLI subprocess smoke：`common/cli/tests/cli_harness.rs`

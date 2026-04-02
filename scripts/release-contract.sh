@@ -34,6 +34,13 @@ rwc_asset_name_for_target() {
   echo "${prefix}-${target}"
 }
 
+rwc_manifest_name_for_target() {
+  local target
+  target="$1"
+  rwc_validate_target_platform "$target"
+  echo "release-manifest-${target}.json"
+}
+
 rwc_host_platform() {
   local os arch
   os="$(uname -s)"
@@ -259,8 +266,11 @@ rwc_validate_local_release_dir() {
   release_dir="$1"
   asset_name="${2:-$(rwc_detect_asset_name)}"
   checksum_file="$release_dir/SHA256SUMS"
-  manifest_path="$release_dir/release-manifest.json"
   expected_platform="${RWC_TARGET_PLATFORM:-$(rwc_platform_from_asset_name "$asset_name")}"
+  manifest_path="$release_dir/$(rwc_manifest_name_for_target "$expected_platform")"
+  if [[ ! -f "$manifest_path" ]]; then
+    manifest_path="$release_dir/release-manifest.json"
+  fi
 
   if [[ ! -f "$release_dir/$asset_name" ]]; then
     echo "missing release asset: $release_dir/$asset_name" >&2
@@ -280,8 +290,10 @@ rwc_write_release_manifest() {
   local release_dir asset_name
   release_dir="$1"
   asset_name="$2"
+  local platform
+  platform="$(rwc_platform_from_asset_name "$asset_name")"
 
-  python3 - <<'PY' "$release_dir" "$asset_name" "$(rwc_release_repo)" "${BINARY_NAME:-common}" "$(rwc_release_tag)" "$(rwc_platform_from_asset_name "$asset_name")" "$(rwc_artifact_prefix)"
+  python3 - <<'PY' "$release_dir" "$asset_name" "$(rwc_release_repo)" "${BINARY_NAME:-common}" "$(rwc_release_tag)" "$platform" "$(rwc_artifact_prefix)" "$(rwc_manifest_name_for_target "$platform")"
 import json
 import sys
 from pathlib import Path
@@ -293,6 +305,7 @@ binary_name = sys.argv[4]
 tag = sys.argv[5]
 platform = sys.argv[6]
 asset_prefix = sys.argv[7]
+platform_manifest_name = sys.argv[8]
 
 manifest = {
     "release_repo": repo,
@@ -311,6 +324,10 @@ manifest = {
 }
 
 (release_dir / "release-manifest.json").write_text(
+    json.dumps(manifest, indent=2) + "\n",
+    encoding="utf-8",
+)
+(release_dir / platform_manifest_name).write_text(
     json.dumps(manifest, indent=2) + "\n",
     encoding="utf-8",
 )

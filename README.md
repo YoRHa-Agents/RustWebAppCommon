@@ -14,11 +14,13 @@
 - 已关闭 starter workspace 基线阶段
 - 已有 `site/`、本地 web runtime 与 browser-backed desktop preview
 - 已有 build / install / update / Pages / release workflows 的共享资产命名契约
+- 已有 adapter-owned 的只读 remote review seam：读取本机 `~/.ssh/config`、列出 SSH host，并发现远程 doc/design 目录
 - 正在收敛 `Enva` 兼容性裁决与更强 parity 测试
 - 原生 desktop shell 仍保留为后续可选路线，不阻塞当前交付
 
 ## 快速入口
 - 人类入口：`docs/index.md`
+- 远程审阅指南：`docs/guides/review.md`
 - agent 入口：`AGENTS.md`
 - 架构设计：`.local/research_pack/16_architecture_design_doc.md`
 - 实现前 Gate：`.local/research_pack/17_pre_implementation_validation_checklist.md`
@@ -32,6 +34,8 @@ cargo run -p common_cli -- dev --surface web --host 127.0.0.1 --port 8080 --rout
 cargo run -p common_cli -- dev --surface desktop --route /detail/desktop-preview
 cargo run -p common_cli -- demo
 cargo run -p common_cli -- docs
+cargo run -p common_cli -- review --list-hosts
+cargo run -p common_cli -- review --ssh-host review-host --config /tmp/review-ssh --path /srv/reviews
 cargo run -p common_cli -- release
 bash scripts/validate-release.sh
 bash scripts/build-release.sh
@@ -58,4 +62,5 @@ scripts/
 ## 当前不做的事
 - 不在 `common_core` 中绑定 Dioxus、Tauri、Trunk 或 GitHub Pages 的具体实现。
 - 不在 `common_core` 中绑定 GitHub Releases API、install 逻辑或 Pages deploy 细节。
+- 不在 common 侧实现 remote write、sync、deploy、conflict resolution 或 session 语义。
 - 不把 `Enva` 的产品业务能力直接复制到公共仓库。
