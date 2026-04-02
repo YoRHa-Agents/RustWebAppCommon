@@ -1,0 +1,58 @@
+name: Build Release Artifacts
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  contract-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target-platform:
+          - linux-x86_64
+          - linux-aarch64
+          - macos-aarch64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate shared target naming contract
+        shell: bash
+        run: |
+          source scripts/release-contract.sh
+          export RWC_TARGET_PLATFORM="${{ matrix.target-platform }}"
+          expected="rustwebappcommon-${{ matrix.target-platform }}"
+          actual="$(rwc_detect_asset_name)"
+          test "$actual" = "$expected"
+
+  release:
+    needs: contract-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Run Rust tests
+        run: cargo test
+      - name: Run Python repo checks
+        run: python -m unittest tests.test_research_pack tests.test_starter_repo tests.test_enva_migration_validation
+      - name: Run release validation smoke
+        run: bash scripts/validate-release.sh
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rustwebappcommon-release
+          path: release
+      - name: Publish GitHub Release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/rustwebappcommon-*
+            release/SHA256SUMS
+            release/release-manifest.json

@@ -1,0 +1,65 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Cargo.toml"
+      - "common/**"
+      - "docs/**"
+      - "demo/**"
+      - "site/**"
+      - "scripts/**"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Run Rust tests
+        run: cargo test
+      - name: Run Python repo checks
+        run: python -m unittest tests.test_research_pack tests.test_starter_repo tests.test_enva_migration_validation
+      - name: Generate site contracts
+        run: |
+          cargo run -p common_cli -- demo
+          cargo run -p common_cli -- docs
+      - name: Validate HTML
+        run: npx --yes htmlhint@latest site/**/*.html
+
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Generate site contracts
+        run: |
+          cargo run -p common_cli -- demo
+          cargo run -p common_cli -- docs
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload site artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
