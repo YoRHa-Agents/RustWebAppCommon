@@ -20,7 +20,7 @@ jobs:
           - linux-aarch64
           - macos-aarch64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Validate shared target naming contract
         shell: bash
         run: |
@@ -52,7 +52,7 @@ jobs:
             install-zigbuild: false
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -76,7 +76,7 @@ jobs:
           RWC_RELEASE_TAG: ${{ github.ref_name }}
         run: bash scripts/build-release.sh
       - name: Upload platform release artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rwc-release-${{ matrix.target-platform }}
           path: |
@@ -89,7 +89,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: .release-artifacts
       - name: Assemble release payload
@@ -124,7 +124,7 @@ jobs:
           )
           PY
       - name: Publish GitHub Release assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.6.1
         with:
           files: |
             release/rustwebappcommon-*
