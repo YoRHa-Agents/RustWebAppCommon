@@ -9,7 +9,7 @@
 - `doc_auto` 长期自动同步机制仍未决定。
 - browser-backed desktop preview 之后是否继续演进为更原生的桌面壳层仍待后续定案。
 - in-process binary self-update、签名与更深的多平台构建能力仍未实现。
-- Enva 下游仍需把 product smoke command、product updater 与产品级 CI 校验接到 common 侧验证接缝上。
+- Enva 下游已新增 tracked adoption 文档、installer hook 兼容层与更强的 GitHub/GitLab 验证入口，但仍需把 full common release validation、product updater 与产品级 CI 策略完全收口。
 
 ## 当前已验证结果
 1. `cargo test`：通过。
@@ -38,6 +38,7 @@ LOCAL_RELEASE_DIR=release bash scripts/update-check.sh
 
 ## 交付给 Enva 的建议文档
 - `doc_auto/enva_migration_validation_recommendations.md`：总结 common 已完成的迁移验证、Enva 仍需跟进的产品级动作，以及建议接入顺序。
+- `Enva/docs/design/en/migration_adoption.md`：Enva 侧 tracked adoption handoff、oracle portability 说明与 immediate/later 路线。
 
 ## Last Updated
-- 2026-04-02T06:32:04+00:00
+- 2026-04-02T07:11:49+00:00

@@ -87,6 +87,7 @@
 **Enva 侧参考基线：**
 - `/home/agent/workspace/Enva/README.md`: 产品公开行为与 release/install/update/demo 描述。
 - `/home/agent/workspace/Enva/docs/design/en/common_alignment.md`: Enva 与 common 的 reuse / extend / app-owned 边界。
+- `/home/agent/workspace/Enva/docs/design/en/migration_adoption.md`: Enva tracked downstream adoption / oracle portability / roadmap 文档。
 - `/home/agent/workspace/Enva/.local/reimpl_for_enva.md`: Enva 本地任务稿，仅作 adoption 顺序辅助参考。
 
 ### Developer insights:
@@ -102,6 +103,8 @@
 - **`.local` 参考不是跨环境契约**: Enva 的 `.local/reimpl_for_enva.md` 在当前树存在，但它不适合作为所有开发者或 CI 环境都可依赖的唯一参考。
 - **common 侧 `static_site.rs` 是 parity 对照面**: 设计建议时应并列参考 common 的 `static_site.rs` 与 Enva 的 `static_pages.rs`，不要只从 Enva 方向反推。
 - **Pages gate 也是迁移 gate 的一部分**: 若 `site/**` 变更会影响 release/install/update/readiness 叙事，Pages workflow 也应运行 migration validation，而不只做 HTML 校验。
+- **Enva 现在已有 tracked adoption 文档**: `docs/design/en/migration_adoption.md` 可替代 `.local` 成为 clean clone / CI 可见的 adoption handoff 入口。
+- **Enva installer 已具备 hook 兼容层**: Enva 侧已可接受 `RWC_POST_INSTALL_HOOK` 作为兼容别名，但 full downstream adoption 仍需把产品 CI 与 release validation 继续接上。
 
 ### Editable Paths
 - `/home/agent/workspace/RustWebAppCommon/doc_auto/enva_migration_validation_recommendations.md` — 本次产出的目标任务文档。
@@ -190,5 +193,5 @@
 - Weighted total: 5.0
 
 ## Last Updated
-- 2026-04-02T06:32:04+00:00
+- 2026-04-02T07:11:49+00:00
 
