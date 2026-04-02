@@ -1,5 +1,6 @@
 use std::fs;
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use common_adapters::{DocsSiteAdapter, StubDocsSiteAdapter, StubWebDemoAdapter, WebDemoAdapter};
 use common_core::{starter_demo_routes, starter_docs_nodes, ThemeTokenSet};
@@ -14,10 +15,24 @@ fn repo_root() -> PathBuf {
         .to_path_buf()
 }
 
+fn prepared_site_root() -> PathBuf {
+    let unique = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("time should move forward")
+        .as_nanos();
+    let site_root = std::env::temp_dir().join(format!("rwc-static-site-{unique}"));
+    let source_root = repo_root().join("site");
+
+    fs::create_dir_all(&site_root).unwrap();
+    fs::copy(source_root.join("index.html"), site_root.join("index.html")).unwrap();
+    fs::copy(source_root.join("demo.html"), site_root.join("demo.html")).unwrap();
+
+    site_root
+}
+
 #[test]
 fn demo_pages_contain_shared_shell_sections() {
-    let root = repo_root();
-    let site_root = root.join("site");
+    let site_root = prepared_site_root();
 
     StubWebDemoAdapter
         .build_demo_site(&site_root, &starter_demo_routes(), &ThemeTokenSet::nier_gray())
@@ -42,8 +57,7 @@ fn demo_pages_contain_shared_shell_sections() {
 
 #[test]
 fn generated_site_manifests_exist_after_build() {
-    let root = repo_root();
-    let site_root = root.join("site");
+    let site_root = prepared_site_root();
 
     StubWebDemoAdapter
         .build_demo_site(&site_root, &starter_demo_routes(), &ThemeTokenSet::nier_gray())
@@ -61,8 +75,7 @@ fn generated_site_manifests_exist_after_build() {
 
 #[test]
 fn runtime_contract_records_web_and_desktop_defaults() {
-    let root = repo_root();
-    let site_root = root.join("site");
+    let site_root = prepared_site_root();
 
     StubWebDemoAdapter
         .build_demo_site(&site_root, &starter_demo_routes(), &ThemeTokenSet::nier_gray())

@@ -13,6 +13,8 @@ fn main() {
             eprintln!("  common demo");
             eprintln!("  common docs");
             eprintln!("  common release");
+            eprintln!("  common review --list-hosts [--config PATH]");
+            eprintln!("  common review --ssh-host ALIAS [--config PATH] [--path REMOTE_PATH]...");
             std::process::exit(2);
         }
     };
@@ -33,4 +35,3 @@ fn main() {
         }
     }
 }
-

@@ -5,6 +5,7 @@
 - `docs_site_adapter`
 - `desktop_tauri_adapter`
 - `release_pipeline_adapter`
+- `remote_docs_review_adapter`
 
 ## 边界规则
 - adapter 可以依赖 core 契约
@@ -17,6 +18,12 @@
 - `docs_site_adapter`：docs/index 站点规划
 - `desktop_tauri_adapter`：桌面壳层与 bundle/update 接缝
 - `release_pipeline_adapter`：release/signing/CI 接缝
+- `remote_docs_review_adapter`：读取本机 `~/.ssh/config`、归一化 SSH host alias，并以只读方式发现远程 doc/design 目录
+
+## 当前 remote review seam
+- `remote_docs_review_adapter` 只负责 adapter-local SSH 配置读取、只读目录发现与文件类型归一化，不把 SSH provider、session、vault 或 remote path state 写回 `common_core`
+- `common_cli review` 是该 adapter 的公共入口：`--list-hosts` 用于列 host，`--ssh-host` 用于走只读 remote review
+- remote write、sync、deploy、conflict resolution 与产品级 review workflow 继续留给 `app_owned`
 
 ## 当前 release / updater seam
 - `release_pipeline_adapter` 继续只承载 release / CI / signing / updater 的 adapter 责任边界，不把 provider 细节写回 `common_core`

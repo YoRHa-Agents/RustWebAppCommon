@@ -148,16 +148,58 @@ Suggested placement:
 - `docs/`
 - `examples/`
 
+### 6. Readonly remote doc/design review seam
+Enva needs one reusable seam for reading local `~/.ssh/config` and reviewing
+remote `doc/`, `docs/`, `design/`, or `designs/` directories without moving SSH
+provider or session semantics into `common_core`.
+
+Priority:
+- `must_now`
+
+Current common status:
+- Common now owns an adapter-local readonly remote review seam in
+  `common/adapters/src/remote_review.rs`: local `~/.ssh/config` parsing, host
+  alias normalization, `Include` expansion, and readonly remote directory
+  discovery.
+- `common review --list-hosts` and `common review --ssh-host ... [--path ...]`
+  now provide the shared CLI entry for host listing and readonly review
+  summaries.
+- Docs/demo and fixture-backed smoke tests now cover the generic flow `local
+  SSH config -> remote host -> readonly review summary` without moving SSH
+  provider, session, or remote mutation semantics into `common_core`.
+
+Acceptance:
+- Common keeps adapter-local parsing for `Host`, `HostName`, `User`, `Port`,
+  `IdentityFile`, and common `Include` patterns from local `~/.ssh/config`.
+- Common keeps a generic CLI entry that lists normalized SSH hosts and performs
+  a readonly review listing for remote doc/design directories.
+- Common docs/demo keep explaining the generic flow `local SSH config -> remote
+  host -> readonly review summary` without introducing product-owned command
+  words.
+- Remote write, sync, deploy, conflict handling, session state, and
+  product-specific review workflows remain app-owned.
+
+Suggested placement:
+- `common/adapters/`
+- `common/cli/`
+- `docs/`
+- `tests/`
+- `doc_auto/`
+
 ## Must Stay App-Owned In Enva
 - Vault crypto, KDF/HMAC policy, vault format, migration, and persistence
 - Secret/app domain model and app injection semantics
 - Enva CLI words and user-facing error/exit code semantics
-- Axum routes, login/session flow, and remote SSH preview/review/sync behavior
+- Axum routes, login/session flow, remote SSH write/sync/deploy behavior, and
+  product-specific review workflows beyond the readonly common seam
 - Conflict resolution rules for deploy/sync and merge preferences
 
 ## Explicit Non-Goals For Common
-- Do not move Enva vault or SSH semantics into `common_core`.
+- Do not move Enva vault, SSH provider/session semantics, or remote path state
+  into `common_core`.
 - Do not copy Enva command names into the common CLI.
+- Do not implement remote write, sync, deploy, conflict handling, or product
+  review semantics in common adapters or CLI.
 - Do not introduce repo-specific GitHub URLs or product constants into
   `common_core`.
 
@@ -168,4 +210,4 @@ Suggested placement:
   instead of blocking on a full common rewrite.
 
 ## Last Updated
-- 2026-04-02T04:33:25+00:00
+- 2026-04-02T09:50:57+00:00

@@ -50,8 +50,8 @@ class EnvaMigrationValidationTests(unittest.TestCase):
                     "browser_download_url": "https://example.test/SHA256SUMS",
                 },
                 {
-                    "name": "release-manifest.json",
-                    "browser_download_url": "https://example.test/release-manifest.json",
+                    "name": "release-manifest-linux-x86_64.json",
+                    "browser_download_url": "https://example.test/release-manifest-linux-x86_64.json",
                 },
             ],
         }

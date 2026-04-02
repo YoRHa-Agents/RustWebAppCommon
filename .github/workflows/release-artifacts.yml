@@ -28,31 +28,98 @@ jobs:
           export RWC_TARGET_PLATFORM="${{ matrix.target-platform }}"
           expected="rustwebappcommon-${{ matrix.target-platform }}"
           actual="$(rwc_detect_asset_name)"
+          manifest="$(rwc_manifest_name_for_target "${{ matrix.target-platform }}")"
           test "$actual" = "$expected"
+          test "$manifest" = "release-manifest-${{ matrix.target-platform }}.json"
 
-  release:
+  build-matrix:
     needs: contract-matrix
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target-platform: linux-x86_64
+            install-zigbuild: false
+          - os: ubuntu-latest
+            target-platform: linux-aarch64
+            install-zigbuild: true
+          - os: macos-14
+            target-platform: macos-aarch64
+            install-zigbuild: false
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+      - name: Install cargo-zigbuild
+        if: matrix.install-zigbuild
+        run: cargo install cargo-zigbuild
       - name: Run Rust tests
         run: cargo test
       - name: Run Python repo checks
         run: python -m unittest tests.test_research_pack tests.test_starter_repo tests.test_enva_migration_validation
-      - name: Run release validation smoke
+      - name: Run host-platform release validation smoke
+        if: matrix.target-platform == 'linux-x86_64'
         run: bash scripts/validate-release.sh
-      - name: Upload release artifacts
+      - name: Build platform release bundle
+        env:
+          RWC_TARGET_PLATFORM: ${{ matrix.target-platform }}
+          RWC_RELEASE_TAG: ${{ github.ref_name }}
+        run: bash scripts/build-release.sh
+      - name: Upload platform release artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rustwebappcommon-release
-          path: release
+          name: rwc-release-${{ matrix.target-platform }}
+          path: |
+            release/rustwebappcommon-${{ matrix.target-platform }}
+            release/SHA256SUMS
+            release/release-manifest-${{ matrix.target-platform }}.json
+
+  publish-release:
+    needs: build-matrix
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: .release-artifacts
+      - name: Assemble release payload
+        run: |
+          mkdir -p release
+          find .release-artifacts -type f -name 'rustwebappcommon-*' -exec cp {} release/ \;
+          find .release-artifacts -type f -name 'release-manifest-*.json' -exec cp {} release/ \;
+          find .release-artifacts -type f -name 'SHA256SUMS' -exec cat {} \; | sort -u > release/SHA256SUMS
+          python3 - <<'PY' "${GITHUB_REF_NAME}"
+          import json
+          import sys
+          from pathlib import Path
+          release = Path("release")
+          release_tag = sys.argv[1]
+          manifests = {}
+          for path in sorted(release.glob("release-manifest-*.json")):
+              payload = json.loads(path.read_text(encoding="utf-8"))
+              manifests[payload["platform"]] = {
+                  "asset_name": payload["asset_name"],
+                  "manifest_name": path.name,
+              }
+          index = {
+              "release_repo": "YoRHa-Agents/RustWebAppCommon",
+              "asset_prefix": "rustwebappcommon",
+              "checksum_file": "SHA256SUMS",
+              "release_tag": release_tag,
+              "assets": manifests,
+          }
+          (release / "release-manifest.json").write_text(
+              json.dumps(index, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
       - name: Publish GitHub Release assets
-        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
           files: |
             release/rustwebappcommon-*
             release/SHA256SUMS
             release/release-manifest.json
+            release/release-manifest-*.json

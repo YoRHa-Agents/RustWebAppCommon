@@ -1,5 +1,5 @@
 # RustWebAppCommon Architecture Design
-> 更新时间: 2026-04-01 18:33 UTC
+> 更新时间: 2026-04-02 09:50 UTC
 
 ## 1. 文档目的
 本设计稿将 research 结果转化为正式架构说明，供后续 starter repo、demo 页面设计和实现阶段复用。它回答三个核心问题：
@@ -50,6 +50,7 @@ flowchart TD
 负责：
 - 把 core 契约映射到 web、docs、desktop、release 等运行面
 - 处理 host/runtime/tooling 的差异
+- 承接 adapter-local 的 SSH config 读取与 readonly remote doc/design 审阅
 
 不负责：
 - 重新定义 core 术语
@@ -83,6 +84,7 @@ flowchart TD
 | `docs_site_adapter` | docs/index 站点构建 | `DocsNode`、`ThemeTokenSet` |
 | `desktop_tauri_adapter` | 桌面壳层与 bundle/update 接口 | `WorkspaceIdentity`、`ReleaseDescriptor` |
 | `release_pipeline_adapter` | release/signing/CI 对接 | `ReleaseDescriptor`、`WorkspaceIdentity` |
+| `remote_docs_review_adapter` | 本机 SSH config 读取、host alias 归一化与只读 remote review | 无；SSH/provider 细节停留在 adapter-local |
 
 详细矩阵见 `14_adapter_boundary_matrix.md`。
 
@@ -118,11 +120,18 @@ flowchart TD
 - release metadata 进 core，具体 CI/provider 留在 adapter
 - build / install / update / workflow 共享 `rustwebappcommon-<platform>` 与 `SHA256SUMS` 资产契约
 
+### readonly remote review
+- 采用 `remote_docs_review_adapter`
+- `common review` 读取本机 `~/.ssh/config` 或 `--config` 覆盖路径
+- 默认自动发现 `doc/`、`docs/`、`design/`、`designs/`，也支持显式 `--path`
+- 只输出 host catalog、目录状态与文件摘要，不把 SSH provider、session 或 remote path state 写回 `common_core`
+
 ## 8. Failure Modes
 - **Core 泄漏 host/tooling 细节**：导致 future adapter 无法替换。
 - **Adapter 反向定义术语**：导致 docs/demo/core 各说各话。
 - **App 内容进入 common**：导致多仓复用性下降。
 - **docs 与 demo 双轨分裂**：导致 agent 入口碎片化。
+- **SSH/provider 语义回写到 core**：导致 readonly review seam 与下游产品边界失真。
 - **在无 starter repo 情况下固化实现**：导致设计稿过度抽象或过早绑定。
 
 ## 9. 立即可执行与延后验证
@@ -144,6 +153,7 @@ flowchart TD
 | `common dev --surface desktop` | 启动 desktop 运行面 |
 | `common demo` | 生成静态 demo/storyboard 产物 |
 | `common docs` | 生成 docs/index 站点 |
+| `common review` | 列出 SSH host 或执行只读 remote doc/design 审阅 |
 | `common release` | 准备 desktop release 产物 |
 
 ## 11. Appendix B: Directory Model

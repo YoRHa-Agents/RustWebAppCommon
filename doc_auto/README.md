@@ -5,8 +5,12 @@
 当仓库进入实现阶段后，所有结构性代码改动都需要在这里留下同步说明，避免 research/design 与实际 starter repo 漂移。
 
 ## 当前同步文件
+- `gate_decision_table.md`
+- `implementation_handoff.md`
+- `remaining_implementation_delta.md`
 - `starter_repo_sync.md`
 - `enva_gap_requirements.md`
+- `enva_compatibility_matrix.md`
 - `enva_migration_validation_recommendations.md`
 
 ## 维护要求
@@ -15,4 +19,4 @@
 - 这里只记录“实现与设计的映射”，不重复完整架构文档
 
 ## Last Updated
-- 2026-04-02T06:32:04+00:00
+- 2026-04-02T09:50:57+00:00
