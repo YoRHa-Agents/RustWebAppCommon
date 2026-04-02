@@ -40,18 +40,23 @@ jobs:
         include:
           - os: ubuntu-latest
             target-platform: linux-x86_64
+            rust-target: x86_64-unknown-linux-gnu
             install-zigbuild: false
           - os: ubuntu-latest
             target-platform: linux-aarch64
+            rust-target: aarch64-unknown-linux-musl
             install-zigbuild: true
           - os: macos-14
             target-platform: macos-aarch64
+            rust-target: aarch64-apple-darwin
             install-zigbuild: false
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
       - name: Install cargo-zigbuild
         if: matrix.install-zigbuild
         run: cargo install cargo-zigbuild
