@@ -1,0 +1,67 @@
+[
+  {
+    "node_id": "readme",
+    "title": "README",
+    "kind": "Index",
+    "path": "README.md",
+    "audience": "Human",
+    "children": [
+      "docs-index"
+    ]
+  },
+  {
+    "node_id": "agents",
+    "title": "AGENTS",
+    "kind": "Guide",
+    "path": "AGENTS.md",
+    "audience": "MainAgent",
+    "children": [
+      "docs-index"
+    ]
+  },
+  {
+    "node_id": "docs-index",
+    "title": "Docs Index",
+    "kind": "Index",
+    "path": "docs/index.md",
+    "audience": "Subagent",
+    "children": [
+      "architecture-overview",
+      "dev-guide",
+      "release-guide",
+      "theme"
+    ]
+  },
+  {
+    "node_id": "architecture-overview",
+    "title": "Architecture Overview",
+    "kind": "Architecture",
+    "path": "docs/architecture/overview.md",
+    "audience": "Human",
+    "children": []
+  },
+  {
+    "node_id": "dev-guide",
+    "title": "Development Guide",
+    "kind": "Guide",
+    "path": "docs/guides/dev.md",
+    "audience": "MainAgent",
+    "children": []
+  },
+  {
+    "node_id": "release-guide",
+    "title": "Release Guide",
+    "kind": "Guide",
+    "path": "docs/guides/release.md",
+    "audience": "Subagent",
+    "children": []
+  },
+  {
+    "node_id": "theme",
+    "title": "Theme Tokens",
+    "kind": "Theme",
+    "path": "docs/theme/nier_gray_tokens.md",
+    "audience": "Subagent",
+    "children": []
+  }
+]

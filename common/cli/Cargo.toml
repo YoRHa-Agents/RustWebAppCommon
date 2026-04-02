@@ -1,0 +1,20 @@
+[package]
+name = "common_cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+common_adapters = { path = "../adapters" }
+common_core = { path = "../core" }
+
+[dev-dependencies]
+serde_json = "1"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "common"
+path = "src/main.rs"
+

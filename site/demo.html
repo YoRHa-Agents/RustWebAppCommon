@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RustWebAppCommon Demo</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body data-default-route="/runtime">
+    <div class="shell">
+      <header class="masthead">
+        <p class="eyebrow">02 / Interactive Surface</p>
+        <h1>RustWebAppCommon 可运行 Demo Path</h1>
+        <p class="lede">
+          该页面同时服务本地 `common dev --surface web`、desktop preview 与 GitHub Pages
+          静态展示；关键页面、命令入口与 route/theme 契约由同一套清单驱动。
+        </p>
+      </header>
+
+      <nav class="topnav" id="topnav"></nav>
+
+      <main class="content">
+        <section class="status-strip" id="status-strip"></section>
+        <section class="hero-card" id="hero-card"></section>
+        <section class="panel split-panel">
+          <div class="panel-section" id="summary-panel"></div>
+          <div class="panel-section" id="command-panel"></div>
+        </section>
+        <section class="panel grid-panel" id="detail-grid"></section>
+        <section class="panel" id="pathways-panel"></section>
+      </main>
+
+      <footer class="footer">
+        <span>Default demo route: `/runtime`</span>
+        <span>Desktop preview route: `/detail/desktop-preview`</span>
+      </footer>
+    </div>
+
+    <script src="js/main.js" defer></script>
+  </body>
+</html>

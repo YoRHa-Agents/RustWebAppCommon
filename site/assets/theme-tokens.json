@@ -1,0 +1,21 @@
+{
+  "palette": {
+    "accent.signal": "#CFC7B8",
+    "bg.canvas": "#111111",
+    "bg.panel": "#1B1A17",
+    "fg.primary": "#ECE6D9",
+    "fg.secondary": "#B7B0A3",
+    "line.soft": "#5F5A52",
+    "line.strong": "#D7D0C4"
+  },
+  "typography": {
+    "body.family": "humanist-sans",
+    "meta.family": "monospace",
+    "title.family": "serif-display"
+  },
+  "component_rules": {
+    "card.style": "thin-border-panel",
+    "heading.syntax": "NN / Section",
+    "table.style": "strong-border"
+  }
+}
